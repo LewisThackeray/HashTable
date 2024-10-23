@@ -29,8 +29,8 @@ void printHashTable(KeyValuePair* myHashTable) { // This function is responsible
         if (myHashTable[i].key[0] == '\0' && myHashTable[i].value[0] == '\0' && myHashTable[i].pointer == NULL) { // If the Slot in the Hash Table is empty.
             printf("%i: \n", i); // Symbolising an Empty Slot in the Hash Table.
         } else if (myHashTable[i].key[0] == '\0' && myHashTable[i].value[0] == '\0' && myHashTable[i].pointer != NULL ) { // If the Slot in the Hash Table contains a Pointer to the Head of a Linked List.
-            char linkedListSequence[1000] = ""; Node* currentNode = myHashTable[i].pointer; while (currentNode->nextNode != NULL) {
-                char thisNode[200]; sprintf(thisNode, "[ Index: %i Key: %s Value: %s ] ->", currentNode->index, currentNode->data.key, currentNode->data.value); // Getting the Relevant Data for Each Node, Creating a String and Storing the String in a Buffer.
+            char linkedListSequence[1000] = ""; Node* currentNode = myHashTable[i].pointer; while (currentNode != NULL) {
+                char thisNode[500]; sprintf(thisNode, "[ Index: %i Key: %s Value: %s ] ->", currentNode->index, currentNode->data.key, currentNode->data.value); // Getting the Relevant Data for Each Node, Creating a String and Storing the String in a Buffer.
                 strcat(linkedListSequence, thisNode); currentNode = currentNode -> nextNode; // Iterating to the Next Node in the Linked List.
             }
             printf("%i: {} -> %s\n", i, linkedListSequence); // Symbolising a Linked List at the Slot in the Hash Table.
@@ -40,62 +40,21 @@ void printHashTable(KeyValuePair* myHashTable) { // This function is responsible
     }
 }
 
-void DictionaryOperation_Insert(KeyValuePair* myHashTable, KeyValuePair kvPair) {
-    int index = hashFunction(kvPair.key); // Get the hash index
-
-    // If the slot is empty, insert directly
-    if (myHashTable[index].key[0] == '\0' && myHashTable[index].value[0] == '\0' && myHashTable[index].pointer == NULL) {
-        strcpy(myHashTable[index].key, kvPair.key);
-        strcpy(myHashTable[index].value, kvPair.value);
-        myHashTable[index].pointer = NULL; // No linked list yet
-    } else {
-        // Collision detected, need to insert into linked list
-        Node* newNode = (Node*)malloc(sizeof(Node));
-        if (newNode == NULL) {
-            perror("Failed to allocate memory for new node");
-            return; // Handle allocation failure
-        }
-        
-        // Set new node's data
-        strcpy(newNode->data.key, kvPair.key);
-        strcpy(newNode->data.value, kvPair.value);
-        newNode->nextNode = NULL;
-
-        // If there is already a linked list at this index
-        if (myHashTable[index].pointer != NULL) {
-            Node* currentNode = myHashTable[index].pointer;
-
-            // Traverse to the end of the linked list
-            while (currentNode->nextNode != NULL) {
-                currentNode = currentNode->nextNode;
-            }
-            currentNode->nextNode = newNode; // Link the new node at the end
-            newNode->previousNode = currentNode; // Set the previous pointer
-        } else {
-            // If no linked list yet, make this node the head
-            myHashTable[index].pointer = newNode;
-            myHashTable[index].key[0] = '\0'; // Clear the original key
-            myHashTable[index].value[0] = '\0'; // Clear the original value
-        }
-    }
-}
-
-// THE INSERT FUNCTION IS NOT WORKING AND NEEDS TO BE FIXED!!!
-
-void DictionaryOperation_Insert(KeyValuePair* myHashTable, KeyValuePair kvPair) { // This function is responsible for inserting the Key-Value Pairs into the Hash Table.
+void DictionaryOperation_Insert(KeyValuePair* myHashTable, KeyValuePair kvPair) { // This function is responsible for inserting the Key-Value Pair into the Hash Table.
     int index = hashFunction(kvPair.key); // Getting the Hash Value of the Key.
-    if (myHashTable[index].key[0] == '\0' && myHashTable[index].value[0] == '\0' && (myHashTable[index].pointer == NULL)) { // Checking if the Specified Slot in the Hash Table is Empty, by Checking if the First Element in the Key or Value is a NULL Terminator.
+    if (myHashTable[index].key[0] == '\0' && myHashTable[index].value[0] == '\0' && myHashTable[index].pointer == NULL) { // If the Slot is Empty, we store the Key-Value Pair at that Slot.
+        printf("Slot %i is Empty.\n", index); // DEBUGGING: Checking that the if statement is working.
         strcpy(myHashTable[index].key, kvPair.key); strcpy(myHashTable[index].value, kvPair.value); myHashTable[index].pointer = NULL;
-    } else { // If the Slot is Not Empty, we need to Insert the Key-Value Pair as a Node in a Linked List.
-        if (myHashTable[index].pointer != NULL) { // If the Pointer is not a NULL Pointer, there is already a Pointer to the Head of the Linked List at that Location.
-            Node* currentNode = myHashTable[index].pointer; while (currentNode->nextNode != NULL) {currentNode = currentNode->nextNode;} // Performing a Forward Traversal on the Linked List until we reach the end.
-            Node* newNode = (Node*)malloc(sizeof(Node)); strcpy(newNode->data.key, kvPair.key); strcpy(newNode->data.value, kvPair.value); newNode->index = currentNode->index + 1; // Allocating Memory for the New Node and Assigning Values.
-            newNode->nextNode = NULL; newNode->previousNode = currentNode; currentNode->nextNode = newNode; // Sorting Out the Links between the Two Nodes.
-        } else { // If there is a Key-Value Pair stored at the Location and not a Pointer to the Head of the Linked List.
-            Node* existingNode = (Node*)malloc(sizeof(Node)); strcpy(existingNode->data.key, myHashTable[index].key); strcpy(existingNode->data.value, myHashTable[index].value); existingNode->nextNode = NULL; existingNode->previousNode = NULL; // Allocating Memory and Creating a Node for the Key-Value Pair already stored at that Slot in the Array.
-            Node* newNode = (Node*)malloc(sizeof(Node)); strcpy(newNode->data.key, kvPair.key); strcpy(newNode->data.value, kvPair.value); newNode->nextNode = NULL; newNode->previousNode = existingNode; // Allocating Memory and Creating a Node for the Key-Value Pair that caused the Collision.
-            existingNode->nextNode = newNode; myHashTable[index].pointer = existingNode; myHashTable[index].key[0] = '\0'; myHashTable[index].value[0] = '\0'; // Sorting Out the Links between the Two Nodes and Ensuring the Hash Table is in the Correct Format.
-        }
+    } else if (myHashTable[index].pointer == NULL) { // If the Slot contains a Key-Value Pair, we need to Create a Linked List for that Slot to handle the Collision.
+        printf("Slot %i already contains a Key-Value Pair.\n", index); // DEBUGGING: Checking that the if statement is working.
+        Node* nodeForExistingData = (Node*)malloc(sizeof(Node)); strcpy(nodeForExistingData->data.key, myHashTable[index].key); strcpy(nodeForExistingData->data.value, myHashTable[index].value); nodeForExistingData->nextNode = NULL; nodeForExistingData->previousNode = NULL; // Allocating Memory and Creating a Node for the Key-Value Pair already stored at that Slot in the Array.
+        Node* newNode = (Node*)malloc(sizeof(Node)); strcpy(newNode->data.key, kvPair.key); strcpy(newNode->data.value, kvPair.value); newNode->nextNode = NULL; newNode->previousNode = nodeForExistingData; // Allocating Memory and Creating a Node for the Key-Value Pair that caused the Collision.
+        nodeForExistingData->nextNode = newNode; myHashTable[index].pointer = nodeForExistingData; myHashTable[index].key[0] = '\0'; myHashTable[index].value[0] = '\0';  nodeForExistingData->index = 0; // Sorting Out the Links between the Two Nodes and Ensuring the Hash Table is in the Correct Format.
+    } else if (myHashTable[index].pointer != NULL) { // If the Slot contains a Pointer to the Head of a Linked List, we need to Append the Key-Value Pair to the Linked List.
+        printf("Slot %i contains a Pointer to the Head of a Linked List.\n", index); // DEBUGGING: Checking that the if statement is working.
+        Node* currentNode = myHashTable[index].pointer; while (currentNode->nextNode != NULL) {currentNode = currentNode->nextNode;} // Performing a Forward Traversal on the Linked List until we react the end.
+        Node* newNode = (Node*)malloc(sizeof(Node)); strcpy(newNode->data.key, kvPair.key); strcpy(newNode->data.value, kvPair.value); newNode->index = currentNode->index + 1; // Allocating Memory for the New Node and Assigning Values.
+        newNode->nextNode = NULL; newNode->previousNode = currentNode; currentNode->nextNode = newNode; // Sorting Out the Links between the Two Nodes.
     }
 }
 
